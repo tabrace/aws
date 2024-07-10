@@ -11,12 +11,7 @@ profiles = open('profiles', 'r')
 readprofile = profiles.readlines()
 final_result=[]
 
-def get_regions(region="us-east-1"):
-    session = boto3.Session()
-    client = session.client('ec2', region_name=region)
-    return sorted([r["RegionName"] for r in client.describe_regions(AllRegions=True)["Regions"]])
-
-regions = get_regions()
+regions = ['us-east-1']
 
 total_acc = len(readprofile)
 count = 0
@@ -43,21 +38,11 @@ for profile in readprofile:
                             group_name = x['GroupName']
                             description = x['Description']
                             sg_id = x['GroupId']
+                            group_id = [g_pair['GroupId'] for g_pair in sg['UserIdGroupPairs']]
                             ip_range = sg['IpRanges']
                             ip_v6_range = sg['Ipv6Ranges']
-                            cidrs=[]
-                            cidripv6=[]
-                            group_id=[]
-                            group_pair = sg['UserIdGroupPairs']
-                            for g_pair in group_pair:
-                                grppair = g_pair['GroupId']
-                                group_id.append(grppair)
-                            for ip_v6 in ip_v6_range:
-                                ipv6 = ip_v6['CidrIpv6']
-                                cidripv6.append(ipv6)
-                            for ip in ip_range:
-                                ipv4 = ip['CidrIp']
-                                cidrs.append(ipv4)
+                            cidrs = [ip['CidrIp'] for ip in ip_range]
+                            cidripv6 = [ip['CidrIpv6'] for ip in ip_v6_range]
                             report = (profile,region,group_name,sg_id,port,cidrs,cidripv6,group_id,description)
                             print(report)
                             final_result.append(report)
@@ -66,10 +51,4 @@ for profile in readprofile:
         except Exception as e:
              print(e)
 
-with open('security_group.csv','w') as f:
-    #print(final_result)
-    write = csv.writer(f)
-    column = ['Account','Region','SG_Name','SG_ID','Port','IPv4','IPv6','Group_ID','Description']
-    write.writerow(column)
-    for result in final_result:
-        write.writerow(result)
+
